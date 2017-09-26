@@ -7,6 +7,10 @@
 #define STRIPE_PIN_2      6
 #define STRIPE_PIN_3      7
 
+// md encode
+#define CLK               0
+#define DT                2
+
 #define N_LEDS 20
  
 Adafruit_NeoPixel strip_1 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_1, NEO_GRB + NEO_KHZ800);
@@ -15,7 +19,7 @@ Adafruit_NeoPixel strip_3 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_3, NEO_GRB + NE
 
 // Potentiometer
 // set up encoder object
-MD_REncoder R = MD_REncoder(0, 2);
+MD_REncoder R = MD_REncoder(CLK, DT);
 
 int32_t f = 111;
 
