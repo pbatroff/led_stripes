@@ -33,25 +33,29 @@ void setup() {
 
   Serial.begin(57600);
   // put your setup code here, to run once:
-//  strip_1.begin();
-//  strip_2.begin();
-//  strip_3.begin();
+  strip_1.begin();
+  strip_2.begin();
+  strip_3.begin();
 //  
 //  // init
-//  chase(strip_1.Color(255, 0, 0), strip_1); // Red
+  chase(strip_1.Color(255, 0, 0), strip_1); // Red
 //  chase(strip_1.Color(0, 255, 0), strip_1); // Green
 //  chase(strip_1.Color(0, 0, 255), strip_1); // Blue
 //
 //  chase(strip_2.Color(255, 0, 0), strip_2); // Red
-//  chase(strip_2.Color(0, 255, 0), strip_2); // Green
+  chase(strip_2.Color(0, 255, 0), strip_2); // Green
 //  chase(strip_2.Color(0, 0, 255), strip_2); // Blue
 //  
 //  chase(strip_3.Color(255, 0, 0), strip_3); // Red
 //  chase(strip_3.Color(0, 255, 0), strip_3); // Green
-//  chase(strip_3.Color(0, 0, 255), strip_3); // Blue
+  chase(strip_3.Color(0, 0, 255), strip_3); // Blue
 
-//  poti_1.begin();
-//  poti_2.begin();
+  set_color(strip_2.Color(255, 0, 0), strip_1);
+  set_color(strip_2.Color(0, 255, 0), strip_2);
+  set_color(strip_2.Color(0, 0, 255), strip_3);
+  
+  poti_1.begin();
+  poti_2.begin();
 }
 
 void loop() {
@@ -61,41 +65,41 @@ void loop() {
 // Encoder stuff
   uint8_t x_1 = poti_1.read();
  
-//  if (x_1)
-//  {
-//    Serial.print(x_1 == DIR_CW ? "\n+1" : "\n-1");
-////    if (x_1 == DIR_CW) {
-////      ++f;
-////      if (f > 255) {
-////        f = 0;  
-////      }
-////    } else {
-////      --f;
-////      if (f < 0) {
-////        f = 255;  
-////      }  
-////    }     
-//  }
-//
-//  uint8_t x_2 = poti_2.read();
-//  if (x_2)
-//  {
-//    Serial.print(x_2 == DIR_CW ? "\n+2" : "\n-2");
-////    if (x_2 == DIR_CW) {
-////      ++f;
-////      if (f > 255) {
-////        f = 0;  
-////      }
-////    } else {
-////      --f;
-////      if (f < 0) {
-////        f = 255;  
-////      }  
-////    }     
-//  }
-  set_color(strip_2.Color(255, 0, 0), strip_1);
-//  set_color(strip_2.Color(0, 255, 0), strip_2);
-//  set_color(strip_2.Color(0, 0, 255), strip_3);
+  if (x_1)
+  {
+    Serial.print(x_1 == DIR_CW ? "\n+1" : "\n-1");
+    if (x_1 == DIR_CW) {
+      ++f;
+      if (f > 255) {
+        f = 0;  
+      }
+    } else {
+      --f;
+      if (f < 0) {
+        f = 255;  
+      }  
+    }
+    set_color(strip_1.Color(f, 0, 0), strip_1); 
+    Serial.println(f);    
+  }
+
+  uint8_t x_2 = poti_2.read();
+  if (x_2)
+  {
+    Serial.print(x_2 == DIR_CW ? "\n+2" : "\n-2");
+//    if (x_2 == DIR_CW) {
+//      ++f;
+//      if (f > 255) {
+//        f = 0;  
+//      }
+//    } else {
+//      --f;
+//      if (f < 0) {
+//        f = 255;  
+//      }  
+//    }     
+  }
+
 }
 
 static void shine_all(uint32_t color) {
@@ -121,6 +125,6 @@ static void chase(uint32_t c, Adafruit_NeoPixel & current_strip) {
       current_strip.setPixelColor(i  , c); // Draw new pixel
       current_strip.setPixelColor(i-4, 0); // Erase pixel a few steps back
       current_strip.show();
-      delay(3);
+      delay(10);
   }
 }
