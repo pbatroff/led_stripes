@@ -8,10 +8,15 @@
 #define STRIPE_PIN_3      7
 
 // md encode
-#define CLK               0
-#define DT                2
+// Poti 1
+#define CLK_1               0
+#define DT_1                1
 
-#define N_LEDS 20
+// Poti 2
+#define CLK_2               2
+#define DT_2                3
+
+#define N_LEDS              20
  
 Adafruit_NeoPixel strip_1 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_1, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel strip_2 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_2, NEO_GRB + NEO_KHZ800);
@@ -19,7 +24,8 @@ Adafruit_NeoPixel strip_3 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_3, NEO_GRB + NE
 
 // Potentiometer
 // set up encoder object
-MD_REncoder R = MD_REncoder(CLK, DT);
+MD_REncoder poti_1 = MD_REncoder(CLK_1, DT_1);
+MD_REncoder poti_2 = MD_REncoder(CLK_2, DT_2);
 
 int32_t f = 111;
 
@@ -44,8 +50,8 @@ void setup() {
 //  chase(strip_3.Color(0, 255, 0), strip_3); // Green
 //  chase(strip_3.Color(0, 0, 255), strip_3); // Blue
 
-  R.begin();
-  
+//  poti_1.begin();
+//  poti_2.begin();
 }
 
 void loop() {
@@ -53,24 +59,43 @@ void loop() {
 //  shine_all(strip_2.Color(0, 255, 0));
 
 // Encoder stuff
-  uint8_t x = R.read();
+  uint8_t x_1 = poti_1.read();
  
-  if (x)
-  {
-    Serial.print(x == DIR_CW ? "\n+1" : "\n-1");
-//    if (x == DIR_CW) {
-//      ++f;
-//      if (f > 255) {
-//        f = 0;  
-//      }
-//    } else {
-//      --f;
-//      if (f < 0) {
-//        f = 255;  
-//      }  
-//    }     
-  }
-//  shine_all(strip_2.Color(0, f, 0));
+//  if (x_1)
+//  {
+//    Serial.print(x_1 == DIR_CW ? "\n+1" : "\n-1");
+////    if (x_1 == DIR_CW) {
+////      ++f;
+////      if (f > 255) {
+////        f = 0;  
+////      }
+////    } else {
+////      --f;
+////      if (f < 0) {
+////        f = 255;  
+////      }  
+////    }     
+//  }
+//
+//  uint8_t x_2 = poti_2.read();
+//  if (x_2)
+//  {
+//    Serial.print(x_2 == DIR_CW ? "\n+2" : "\n-2");
+////    if (x_2 == DIR_CW) {
+////      ++f;
+////      if (f > 255) {
+////        f = 0;  
+////      }
+////    } else {
+////      --f;
+////      if (f < 0) {
+////        f = 255;  
+////      }  
+////    }     
+//  }
+  set_color(strip_2.Color(255, 0, 0), strip_1);
+//  set_color(strip_2.Color(0, 255, 0), strip_2);
+//  set_color(strip_2.Color(0, 0, 255), strip_3);
 }
 
 static void shine_all(uint32_t color) {
@@ -81,6 +106,13 @@ static void shine_all(uint32_t color) {
     strip_1.show();
     strip_2.show();
     strip_3.show();
+  }
+}
+
+static void set_color(uint32_t color, Adafruit_NeoPixel & strip) {
+  for(uint16_t i=0; i < N_LEDS;++i) {
+    strip.setPixelColor(i  , color);
+    strip.show();
   }
 }
 
