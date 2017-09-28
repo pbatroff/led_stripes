@@ -20,12 +20,14 @@
 #define DT_2                3
 
 // number of LEDs per stripe
-#define N_LEDS              20
+#define NUM_LEDS              20
 
+// Fast LED
+CRGB leds[NUM_LEDS];
  
-Adafruit_NeoPixel strip_1 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_1, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel strip_2 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_2, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel strip_3 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_3, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip_1 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_1, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip_2 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_2, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip_3 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_3, NEO_GRB + NEO_KHZ800);
 
 // Potentiometer
 // set up encoder object
@@ -109,7 +111,7 @@ void loop() {
 }
 
 static void shine_all(uint32_t color) {
-  for(uint16_t i=0; i < N_LEDS;++i) {
+  for(uint16_t i=0; i < NUM_LEDS;++i) {
     strip_1.setPixelColor(i  , color);
     strip_2.setPixelColor(i  , color);
     strip_3.setPixelColor(i  , color);
@@ -120,7 +122,7 @@ static void shine_all(uint32_t color) {
 }
 
 static void set_color(uint32_t color, Adafruit_NeoPixel & strip) {
-  for(uint16_t i=0; i < N_LEDS;++i) {
+  for(uint16_t i=0; i < NUM_LEDS;++i) {
     strip.setPixelColor(i  , color);
     strip.show();
   }
