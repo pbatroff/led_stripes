@@ -1,5 +1,8 @@
+#define ENABLE_SPEED 0
 #include <MD_REncoder.h>
 #include <Adafruit_NeoPixel.h>
+#include <FastLED.h>
+
 
 
 // LED Stripes
@@ -16,7 +19,9 @@
 #define CLK_2               2
 #define DT_2                3
 
+// number of LEDs per stripe
 #define N_LEDS              20
+
  
 Adafruit_NeoPixel strip_1 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_1, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel strip_2 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_2, NEO_GRB + NEO_KHZ800);
@@ -27,7 +32,7 @@ Adafruit_NeoPixel strip_3 = Adafruit_NeoPixel(N_LEDS, STRIPE_PIN_3, NEO_GRB + NE
 MD_REncoder poti_1 = MD_REncoder(CLK_1, DT_1);
 MD_REncoder poti_2 = MD_REncoder(CLK_2, DT_2);
 
-int32_t f = 111;
+uint8_t f = 125;
 
 void setup() {
 
@@ -69,17 +74,18 @@ void loop() {
   {
     Serial.print(x_1 == DIR_CW ? "\n+1" : "\n-1");
     if (x_1 == DIR_CW) {
-      ++f;
+      f += 5;
       if (f > 255) {
         f = 0;  
       }
     } else {
-      --f;
+      f -= 5;
       if (f < 0) {
         f = 255;  
       }  
     }
-    set_color(strip_1.Color(f, 0, 0), strip_1); 
+    set_color(strip_1.Color(f, 0, 0), strip_1);
+    delay(25); 
     Serial.println(f);    
   }
 
