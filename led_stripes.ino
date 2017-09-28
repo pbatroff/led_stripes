@@ -1,9 +1,22 @@
 #define ENABLE_SPEED 0
 #include <MD_REncoder.h>
-#include <Adafruit_NeoPixel.h>
 #include <FastLED.h>
 
+#define NUM_LEDS    20
+#define BRIGHTNESS  64
+#define LED_TYPE    WS2811
+#define COLOR_ORDER GRB
+CRGB leds[NUM_LEDS];
 
+#define UPDATES_PER_SECOND 5
+#define BRIGHTNESS_INTERVAL 0
+
+CRGBPalette16 currentPalette;
+TBlendType    currentBlending;
+
+uint8_t index = 0;
+uint8_t brightness = 200;
+uint8_t fade_amount = 5;
 
 // LED Stripes
 #define STRIPE_PIN_1      5
@@ -19,120 +32,74 @@
 #define CLK_2               2
 #define DT_2                3
 
-// number of LEDs per stripe
-#define NUM_LEDS              20
-
-// Fast LED
-CRGB leds[NUM_LEDS];
  
-Adafruit_NeoPixel strip_1 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_1, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel strip_2 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_2, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel strip_3 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_3, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel strip_1 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_1, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel strip_2 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_2, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel strip_3 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_3, NEO_GRB + NEO_KHZ800);
 
 // Potentiometer
 // set up encoder object
 MD_REncoder poti_1 = MD_REncoder(CLK_1, DT_1);
 MD_REncoder poti_2 = MD_REncoder(CLK_2, DT_2);
 
-uint8_t f = 125;
+bool pulsing_direction = true;
+// amount of loops to change brightness
+uint8_t interval_counter = 0;
 
 void setup() {
 
-  Serial.begin(57600);
-  // put your setup code here, to run once:
-  strip_1.begin();
-  strip_2.begin();
-  strip_3.begin();
-//  
-//  // init
-  chase(strip_1.Color(255, 0, 0), strip_1); // Red
-//  chase(strip_1.Color(0, 255, 0), strip_1); // Green
-//  chase(strip_1.Color(0, 0, 255), strip_1); // Blue
-//
-//  chase(strip_2.Color(255, 0, 0), strip_2); // Red
-  chase(strip_2.Color(0, 255, 0), strip_2); // Green
-//  chase(strip_2.Color(0, 0, 255), strip_2); // Blue
-//  
-//  chase(strip_3.Color(255, 0, 0), strip_3); // Red
-//  chase(strip_3.Color(0, 255, 0), strip_3); // Green
-  chase(strip_3.Color(0, 0, 255), strip_3); // Blue
-
-  set_color(strip_2.Color(255, 0, 0), strip_1);
-  set_color(strip_2.Color(0, 255, 0), strip_2);
-  set_color(strip_2.Color(0, 0, 255), strip_3);
+  delay( 3000 ); // power-up safety delay
+  FastLED.addLeds<LED_TYPE, STRIPE_PIN_1, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<LED_TYPE, STRIPE_PIN_2, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<LED_TYPE, STRIPE_PIN_3, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.setBrightness(  BRIGHTNESS );
   
+  
+  currentPalette = RainbowColors_p;
+  currentBlending = LINEARBLEND;
+  // initialize Potis
   poti_1.begin();
   poti_2.begin();
+  // debug 
+  Serial.begin(57600);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-//  shine_all(strip_2.Color(0, 255, 0));
+  index += 2; /* motion speed */
+  Serial.println(index);
+  
+  FillLEDsFromPaletteColors( index);
+  
+  FastLED.show();
+  set_brightness();
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
 
-// Encoder stuff
-  uint8_t x_1 = poti_1.read();
- 
-  if (x_1)
-  {
-    Serial.print(x_1 == DIR_CW ? "\n+1" : "\n-1");
-    if (x_1 == DIR_CW) {
-      f += 5;
-      if (f > 255) {
-        f = 0;  
-      }
-    } else {
-      f -= 5;
-      if (f < 0) {
-        f = 255;  
-      }  
+}
+
+void FillLEDsFromPaletteColors( uint8_t colorIndex) {      
+    for( int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+        // reverse the direction of the fading at the ends of the fade: 
+        colorIndex += 1;
     }
-    set_color(strip_1.Color(f, 0, 0), strip_1);
-    delay(25); 
-    Serial.println(f);    
-  }
-
-  uint8_t x_2 = poti_2.read();
-  if (x_2)
-  {
-    Serial.print(x_2 == DIR_CW ? "\n+2" : "\n-2");
-//    if (x_2 == DIR_CW) {
-//      ++f;
-//      if (f > 255) {
-//        f = 0;  
-//      }
-//    } else {
-//      --f;
-//      if (f < 0) {
-//        f = 255;  
-//      }  
-//    }     
-  }
-
 }
 
-static void shine_all(uint32_t color) {
-  for(uint16_t i=0; i < NUM_LEDS;++i) {
-    strip_1.setPixelColor(i  , color);
-    strip_2.setPixelColor(i  , color);
-    strip_3.setPixelColor(i  , color);
-    strip_1.show();
-    strip_2.show();
-    strip_3.show();
+uint8_t set_brightness() {
+  if (interval_counter < BRIGHTNESS_INTERVAL) {
+    ++interval_counter;
+    return;  
   }
+  if (brightness == 255) {
+    pulsing_direction = false;  
+  }
+  if (brightness == 200) {
+    pulsing_direction = true;  
+  }
+  if (pulsing_direction) {
+    brightness += fade_amount;
+  } else {
+    brightness -= fade_amount;  
+  }
+  return brightness;
 }
 
-static void set_color(uint32_t color, Adafruit_NeoPixel & strip) {
-  for(uint16_t i=0; i < NUM_LEDS;++i) {
-    strip.setPixelColor(i  , color);
-    strip.show();
-  }
-}
-
-static void chase(uint32_t c, Adafruit_NeoPixel & current_strip) {
-  for(uint16_t i=0; i<current_strip.numPixels()+4; i++) {
-      current_strip.setPixelColor(i  , c); // Draw new pixel
-      current_strip.setPixelColor(i-4, 0); // Erase pixel a few steps back
-      current_strip.show();
-      delay(10);
-  }
-}
