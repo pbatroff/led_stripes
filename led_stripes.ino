@@ -2,56 +2,57 @@
 #include <MD_REncoder.h>
 #include <FastLED.h>
 
-#define NUM_LEDS    20
-#define BRIGHTNESS  64
-#define LED_TYPE    WS2811
-#define COLOR_ORDER GRB
+#define NUM_LEDS            20
+#define BRIGHTNESS          100
+#define MAX_BRIGHNTESS_GLOBAL 200
+#define LED_TYPE            NEOPIXEL
+
+// LED Array
 CRGB leds[NUM_LEDS];
 
-#define UPDATES_PER_SECOND 5
-#define BRIGHTNESS_INTERVAL 0
+/////////////////////////////
+// PINS: 
+// LED Stripes
+#define STRIPE_PIN_1        5
+#define STRIPE_PIN_2        6
+#define STRIPE_PIN_3        7
+// Poti 1
+#define CLK_1               0
+#define DT_1                1
+// Poti 2
+#define CLK_2               2
+#define DT_2                3
+/////////////////////////////
+
+//#define UPDATES_PER_SECOND 24
+#define LOOP_INTERVAL       24
 
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
 
-uint8_t index = 0;
-uint8_t brightness = 200;
-uint8_t fade_amount = 5;
+uint8_t index               = 0;    // color index, uses rainbow color palette
+uint8_t brightness          = 100;  // tracking current brightness
+uint8_t max_brightness      = 100;  // max brightness, will be adjusted by poti 2
+uint8_t brightness_interval = 60;   // interval, defines min brightness (max - interval)
+uint8_t fade_amount         = 2;    // change in brightness
 
-// LED Stripes
-#define STRIPE_PIN_1      5
-#define STRIPE_PIN_2      6
-#define STRIPE_PIN_3      7
-
-// md encode
-// Poti 1
-#define CLK_1               0
-#define DT_1                1
-
-// Poti 2
-#define CLK_2               2
-#define DT_2                3
-
- 
-//Adafruit_NeoPixel strip_1 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_1, NEO_GRB + NEO_KHZ800);
-//Adafruit_NeoPixel strip_2 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_2, NEO_GRB + NEO_KHZ800);
-//Adafruit_NeoPixel strip_3 = Adafruit_NeoPixel(NUM_LEDS, STRIPE_PIN_3, NEO_GRB + NEO_KHZ800);
+uint8_t motion_speed        = 3;    // increments the color index, defines the speed at which colors are changing
+uint8_t brightness_speed    = 3;    // increments the brightness max by this amount
 
 // Potentiometer
 // set up encoder object
 MD_REncoder poti_1 = MD_REncoder(CLK_1, DT_1);
 MD_REncoder poti_2 = MD_REncoder(CLK_2, DT_2);
 
-bool pulsing_direction = true;
-// amount of loops to change brightness
-uint8_t interval_counter = 0;
+bool pulsing_direction = true;      // internal switch to determine if increment/decrement brightness
+uint8_t interval_counter = 0;       // counter; used to skip loop steps to adjust colors
 
 void setup() {
 
   delay( 3000 ); // power-up safety delay
-  FastLED.addLeds<LED_TYPE, STRIPE_PIN_1, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
-  FastLED.addLeds<LED_TYPE, STRIPE_PIN_2, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
-  FastLED.addLeds<LED_TYPE, STRIPE_PIN_3, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<LED_TYPE, STRIPE_PIN_1>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<LED_TYPE, STRIPE_PIN_2>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.addLeds<LED_TYPE, STRIPE_PIN_3>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness(  BRIGHTNESS );
   
   
@@ -60,46 +61,78 @@ void setup() {
   // initialize Potis
   poti_1.begin();
   poti_2.begin();
+
+  FillLEDsFromPaletteColors(index);
+  
   // debug 
   Serial.begin(57600);
 }
 
 void loop() {
-  index += 2; /* motion speed */
-  Serial.println(index);
-  
-  FillLEDsFromPaletteColors( index);
-  
-  FastLED.show();
-  set_brightness();
-  FastLED.delay(1000 / UPDATES_PER_SECOND);
 
-}
-
-void FillLEDsFromPaletteColors( uint8_t colorIndex) {      
-    for( int i = 0; i < NUM_LEDS; i++) {
-        leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
-        // reverse the direction of the fading at the ends of the fade: 
-        colorIndex += 1;
+  uint8_t x = poti_1.read();  
+  if (x)
+  {
+    if (x == DIR_CW) {
+      index+=motion_speed;
+    } else {
+      index-=motion_speed;
     }
+    FillLEDsFromPaletteColors(index);
+  }
+
+  uint8_t y = poti_2.read();
+  if (y)
+  {
+    if (y == DIR_CW) {
+      if ((max_brightness + brightness_speed) > MAX_BRIGHNTESS_GLOBAL ){
+        max_brightness = MAX_BRIGHNTESS_GLOBAL;
+      } else {
+        max_brightness+=brightness_speed;
+      }
+    } else {
+      if ((max_brightness < brightness_interval)  ){
+        max_brightness = brightness_interval;
+      } else {
+        max_brightness-=brightness_speed;
+      }
+    }
+    FillLEDsFromPaletteColors(index);
+  }
+  set_brightness();
+  FastLED.show();
+//  FastLED.delay(1000 / UPDATES_PER_SECOND);
 }
 
-uint8_t set_brightness() {
-  if (interval_counter < BRIGHTNESS_INTERVAL) {
+void FillLEDsFromPaletteColors( uint8_t colorIndex) {
+//  Serial.println(brightness);  
+  for( int i = 0; i < NUM_LEDS; i++) {
+      leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+      colorIndex += 1;
+  }
+}
+
+void set_brightness() {
+  if (interval_counter < LOOP_INTERVAL) {
     ++interval_counter;
     return;  
   }
-  if (brightness == 255) {
+  interval_counter = 0;
+  if (brightness >= max_brightness) {
     pulsing_direction = false;  
   }
-  if (brightness == 200) {
+  if (brightness <= (max_brightness - brightness_interval)) {
     pulsing_direction = true;  
   }
   if (pulsing_direction) {
-    brightness += fade_amount;
+    if ((brightness + fade_amount) <= 255 ){
+      brightness+=fade_amount;
+    }
   } else {
-    brightness -= fade_amount;  
+    if ((brightness - fade_amount ) >= brightness_interval ){
+      brightness-=fade_amount;
+    }
   }
-  return brightness;
+  FastLED.setBrightness(brightness);
 }
 
