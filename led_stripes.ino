@@ -4,7 +4,7 @@
 
 #define NUM_LEDS            20
 #define BRIGHTNESS          100
-#define MAX_BRIGHNTESS_GLOBAL 200
+#define MAX_BRIGHNTESS_GLOBAL 200     // max 255; better 254
 #define LED_TYPE            NEOPIXEL
 
 // LED Array
@@ -44,9 +44,16 @@ uint8_t brightness_speed    = 3;    // increments the brightness max by this amo
 MD_REncoder poti_1 = MD_REncoder(CLK_1, DT_1);
 MD_REncoder poti_2 = MD_REncoder(CLK_2, DT_2);
 
+// internal helper
 bool pulsing_direction = true;      // internal switch to determine if increment/decrement brightness
 uint8_t interval_counter = 0;       // counter; used to skip loop steps to adjust colors
 
+/**
+ * Setup method. Setup LED array with defined PINs, init brightness
+ * Color Palette = rainbow
+ * setup 2 Potentionmeters
+ * activate initial colors
+ */
 void setup() {
 
   delay( 3000 ); // power-up safety delay
@@ -68,11 +75,33 @@ void setup() {
   Serial.begin(57600);
 }
 
+/**
+ * Main loop. Reads out Potis, adjusts LEDs
+ * 
+ * TODO: send color index to network server
+ */
 void loop() {
 
-  uint8_t x = poti_1.read();  
-  if (x)
-  {
+  // reads potentionmeter 1 and adjusts the color index
+  poti_set_color_index(poti_1);
+  // reads potentionmeter 2 and adjusts brightness 
+  poti_set_brightness(poti_2);
+
+  // set brightness --> pulsing effect
+  set_brightness();
+  // activate settings on the LEDs
+  FastLED.show();
+//  FastLED.delay(1000 / UPDATES_PER_SECOND);
+}
+
+/**
+ * reads the poti_1 value, and increases/decreases 
+ * the color index on the palette
+ */
+void poti_set_color_index(MD_REncoder & poti) {
+  
+  uint8_t x = poti.read();  
+  if (x) {
     if (x == DIR_CW) {
       index+=motion_speed;
     } else {
@@ -80,11 +109,17 @@ void loop() {
     }
     FillLEDsFromPaletteColors(index);
   }
+}
 
-  uint8_t y = poti_2.read();
-  if (y)
-  {
-    if (y == DIR_CW) {
+/**
+ * sets brightness on the LEDs in the parameters of 'max_brightness' and 
+ * 'brightness_interval'
+ */
+void poti_set_brightness(MD_REncoder & poti) {
+  
+  uint8_t x = poti.read();
+  if (x) {
+    if (x == DIR_CW) {
       if ((max_brightness + brightness_speed) > MAX_BRIGHNTESS_GLOBAL ){
         max_brightness = MAX_BRIGHNTESS_GLOBAL;
       } else {
@@ -98,13 +133,16 @@ void loop() {
       }
     }
     FillLEDsFromPaletteColors(index);
-  }
-  set_brightness();
-  FastLED.show();
-//  FastLED.delay(1000 / UPDATES_PER_SECOND);
+  }  
 }
 
+/**
+ * Set all LEDs in the Arrays with the given color index 
+ * 
+ * @index uint8_t colorindex, 0-255, rainbow palette
+ */
 void FillLEDsFromPaletteColors( uint8_t colorIndex) {
+  
 //  Serial.println(brightness);  
   for( int i = 0; i < NUM_LEDS; i++) {
       leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
@@ -112,7 +150,17 @@ void FillLEDsFromPaletteColors( uint8_t colorIndex) {
   }
 }
 
+/**
+ * Sets the (global) brightness for the LEDs. Uses the LOOP_INTERVSL define
+ *  to skip an amount of loops
+ *  
+ *  Does a pulsing effect on the LEDs, brightness levels are defined by a max value
+ *  'max_brightness' and a 'brightness_interval'.
+ *  Values cannot b ebigger than 255 or 0, overflows shoulnd't be allowed, since
+ *  it isnn't a pulsing effect anymore then.
+ */
 void set_brightness() {
+  
   if (interval_counter < LOOP_INTERVAL) {
     ++interval_counter;
     return;  
