@@ -12,16 +12,16 @@ CRGB leds[NUM_LEDS];
 
 /////////////////////////////
 // PINS: 
-// LED Stripes
-#define STRIPE_PIN_1        5
-#define STRIPE_PIN_2        6
-#define STRIPE_PIN_3        7
 // Poti 1
 #define CLK_1               0
 #define DT_1                1
 // Poti 2
 #define CLK_2               2
 #define DT_2                3
+// LED Stripes
+#define STRIPE_PIN_1        5
+#define STRIPE_PIN_2        6
+#define STRIPE_PIN_3        7
 /////////////////////////////
 
 //#define UPDATES_PER_SECOND 24
